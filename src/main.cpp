@@ -14,8 +14,11 @@ using namespace cv;
 
 const int ALGO_CANNY     = 0;
 const int ALGO_FLANDMARK = 1;
+const int ALGO_SIFT = 2;
+const int ALGO_SURF = 3;
 
-int active_algo = ALGO_FLANDMARK;
+
+int active_algo = ALGO_SURF;
 
 int hist_thresh_low = 30;
 int hist_thresh_high = 90;
@@ -28,6 +31,14 @@ int bound_max = 255;
 
 void showAlgo(int active_algo, Mat* ptr_img) {
 	switch (active_algo) {
+	case ALGO_SURF:
+		Algorithms::showSURF(ptr_img);
+	break;
+
+	case ALGO_SIFT:
+		Algorithms::showSIFT(ptr_img);
+	break;
+
 	case ALGO_FLANDMARK:
 		Algorithms::showFlandmark(ptr_img);
 	break;

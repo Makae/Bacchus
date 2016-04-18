@@ -5,6 +5,8 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/objdetect.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <opencv2/xfeatures2d/nonfree.hpp>
 
 #include "flandmark_detector.h"
 
@@ -13,7 +15,7 @@
 
 using namespace cv;
 using namespace std;
-
+using namespace xfeatures2d;
 
 FLANDMARK_Model* ptr_flm_model;
 CvHaarClassifierCascade* ptr_face_cascade;
@@ -44,6 +46,38 @@ void Algorithms::showCanny(Mat* ptr_img, int hist_thresh_low, int hist_thresh_hi
 	imshow("Canny", img_edges);
 }
 
+void Algorithms::showSIFT(Mat* ptr_img) {
+	Mat img = (*ptr_img);
+	Mat img_gray;
+	cvtColor((*ptr_img), img_gray, CV_BGR2GRAY);
+	cv::Ptr<Feature2D> sift = SIFT::create(10);
+	std::vector<KeyPoint> keypoints_1, keypoints_2;
+
+	sift->detect(img_gray, keypoints_1);
+
+	Mat descriptors_1, descriptors_2;
+	sift->compute(img_gray, keypoints_1, descriptors_1);
+
+	drawKeypoints(img_gray, keypoints_1, img_gray);
+	imshow("SIFT", img_gray);
+}
+
+void Algorithms::showSURF(Mat* ptr_img) {
+	Mat img = (*ptr_img);
+	Mat img_gray;
+	cvtColor((*ptr_img), img_gray, CV_BGR2GRAY);
+	cv::Ptr<Feature2D> sift = SURF::create(100);
+	std::vector<KeyPoint> keypoints_1, keypoints_2;
+
+	sift->detect(img_gray, keypoints_1);
+
+	Mat descriptors_1, descriptors_2;
+	sift->compute(img_gray, keypoints_1, descriptors_1);
+
+	drawKeypoints(img_gray, keypoints_1, img_gray);
+	imshow("SURF", img_gray);
+}
+
 void Algorithms::showFlandmark(Mat* ptr_img) {
 	int t = 0;
 	int ms = 0;
@@ -58,10 +92,11 @@ void Algorithms::showFlandmark(Mat* ptr_img) {
 		utils.initFlandmarkModel("C:\\Libraries\\flandmark\\data\\flandmark_model.dat", ptr_flm_model);
 		ptr_landmarks = (double*)malloc(2 * (*ptr_flm_model).data.options.M * sizeof(double));
 		utils.initFaceCascade("C:\\Libraries\\flandmark\\data\\haarcascade_frontalface_alt.xml", ptr_face_cascade);
+		flandmark_initialized = true;
 	}
 
 	cvConvertImage(ptr_img_ipl, ptr_img_bw);
-	cout << "T*ST";
+
 	utils.detectFaceInImage(
 		ptr_img_flandmark, 
 		ptr_img_bw, 
