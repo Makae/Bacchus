@@ -6,7 +6,10 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 
+#include "flandmark_detector.h"
+
 using namespace cv;
+
 class Utilities
 {
 	public:
@@ -17,6 +20,9 @@ class Utilities
 			return instance;
 		}
 		void test();
+		void detectFaceInImage(IplImage *orig, IplImage* input, CvHaarClassifierCascade* cascade, FLANDMARK_Model *model, int *bbox, double *landmarks);
+		void initFlandmarkModel(char * data_file, FLANDMARK_Model*& model);
+		void initFaceCascade(char * cascade_file, CvHaarClassifierCascade*& cascade);
 		Mat getImage();
 
 	private:
