@@ -20,7 +20,7 @@ class Utilities
 			return instance;
 		}
 		void test();
-		void detectFaceInImage(IplImage *orig, IplImage* input, CvHaarClassifierCascade* cascade, FLANDMARK_Model *model, int *bbox, double *landmarks);
+		void detectFaceInImage(IplImage * input, int & num_faces, CvHaarClassifierCascade * cascade, FLANDMARK_Model * model, int *& bbox, double *& landmarks);
 		void initFlandmarkModel(char * data_file, FLANDMARK_Model*& model);
 		void initFaceCascade(char * cascade_file, CvHaarClassifierCascade*& cascade);
 		Mat getImage();

@@ -7,11 +7,13 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/xfeatures2d.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
+#include <opencv2/optflow.hpp>
 
 #include "flandmark_detector.h"
 
 #include "../include/project/algorithms.h"
 #include "../include/project/utilities.h"
+#include "../include/project/templatematcher.h"
 
 using namespace cv;
 using namespace std;
@@ -22,6 +24,10 @@ CvHaarClassifierCascade* ptr_face_cascade;
 int* ptr_bbox = (int*)malloc(4 * sizeof(int));
 double* ptr_landmarks;
 bool flandmark_initialized = false;
+Mat* ptr_img_prev = new Mat;
+std::vector<cv::Point2f> features_prev;
+
+
 
 void Algorithms::showCanny(Mat* ptr_img, int hist_thresh_low, int hist_thresh_high) {
 	Mat img = (*ptr_img);
@@ -78,16 +84,17 @@ void Algorithms::showSURF(Mat* ptr_img) {
 	imshow("SURF", img_gray);
 }
 
-void Algorithms::showFlandmark(Mat* ptr_img) {
-	int t = 0;
-	int ms = 0;
-	IplImage* ptr_img_ipl = cvCloneImage(&(IplImage)(*ptr_img));
+void Algorithms::showTemplateMatching(Mat * ptr_img) {
+	Templatematcher *tm = new Templatematcher();
+	tm->run(ptr_img);
+}
+
+void Algorithms::doFlandmark(Mat* ptr_img, int& num_faces, int bbox[4], double*& ptr_flandmarks ) {
+	IplImage* ptr_img_ipl = cvCloneImage(&(IplImage(*ptr_img)));
 	IplImage* ptr_img_bw = cvCreateImage(cvSize((*ptr_img).cols, (*ptr_img).rows), IPL_DEPTH_8U, 1);
-	IplImage* ptr_img_flandmark = cvCloneImage(&(IplImage)(*ptr_img_ipl));
 	Utilities utils = (*Utilities::getInstance());
-	char fps[50];
-	CvFont font;
-	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0, 0, 1, CV_AA);
+	int* ptr_bbox = &bbox[0];
+	
 	if (!flandmark_initialized) {
 		utils.initFlandmarkModel("C:\\Libraries\\flandmark\\data\\flandmark_model.dat", ptr_flm_model);
 		ptr_landmarks = (double*)malloc(2 * (*ptr_flm_model).data.options.M * sizeof(double));
@@ -98,16 +105,99 @@ void Algorithms::showFlandmark(Mat* ptr_img) {
 	cvConvertImage(ptr_img_ipl, ptr_img_bw);
 
 	utils.detectFaceInImage(
-		ptr_img_flandmark, 
-		ptr_img_bw, 
-		ptr_face_cascade, 
-		ptr_flm_model, 
-		ptr_bbox, 
+		ptr_img_bw,
+		num_faces,
+		ptr_face_cascade,
+		ptr_flm_model,
+		ptr_bbox,
 		ptr_landmarks);
+}
 
-	t = (double)cvGetTickCount() - t;
-	sprintf(fps, "%.2f fps", 1000.0 / (t / ((double)cvGetTickFrequency() * 1000.0)));
-	cvPutText(ptr_img_flandmark, fps, cvPoint(10, 40), &font, cvScalar(255, 0, 0, 0));
+void Algorithms::showFlandmark(Mat* ptr_img) {
+	char fps[50];
+	int bbox[4];
+	int num_faces = 0;
+	double* landmarks = 0;
+	IplImage* ptr_img_ipl = &(IplImage)(*ptr_img);
 
-	imshow("Flandmark Feature Points", cvarrToMat(ptr_img_flandmark));
+	CvFont font;
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0, 0, 1, CV_AA);
+
+	Algorithms::doFlandmark(ptr_img, num_faces, bbox, landmarks);
+
+	// display landmarks
+	cvRectangle(ptr_img_ipl, cvPoint(bbox[0], bbox[1]), cvPoint(bbox[2], bbox[3]), CV_RGB(255, 0, 0));
+	cvRectangle(ptr_img_ipl, cvPoint(ptr_flm_model->bb[0], ptr_flm_model->bb[1]), cvPoint(ptr_flm_model->bb[2], ptr_flm_model->bb[3]), CV_RGB(0, 0, 255));
+	cvCircle(ptr_img_ipl, cvPoint((int)ptr_landmarks[0], (int)ptr_landmarks[1]), 3, CV_RGB(0, 0, 255), CV_FILLED);
+	for (int i = 2; i < 2 * ptr_flm_model->data.options.M; i += 2)
+	{
+		cvCircle(ptr_img_ipl, cvPoint(int(ptr_landmarks[i]), int(ptr_landmarks[i + 1])), 3, CV_RGB(255, 0, 0), CV_FILLED);
+	}
+
+	if (num_faces > 0) {
+		printf("Faces detected: %d", num_faces);
+	} else {
+		printf("NO Face\n");
+	}
+
+
+
+	imshow("Flandmark Feature Points", cvarrToMat(ptr_img_ipl));
+}
+
+void Algorithms::showLucasKanade(Mat* ptr_img) {
+	Mat* ptr_img_next = new Mat;
+	Mat* ptr_img_copy = new Mat;
+	std::vector<cv::Point2f>     features_next;
+	std::vector<unsigned char> status;
+	std::vector<float>         error;
+
+	int bbox[4];
+	int num_faces = 0;
+	double* landmarks = 0;
+
+	cvtColor((*ptr_img), (*ptr_img_next), CV_BGR2GRAY);
+	*ptr_img_copy = *ptr_img_next;
+	bool no_prev_img = ptr_img_prev->cols == 0;
+	TermCriteria termcrit(TermCriteria::COUNT | TermCriteria::EPS, 20, 0.03);
+	if (no_prev_img) {
+		cout << "Searching Face and points";
+		Algorithms::doFlandmark(ptr_img, num_faces, bbox, landmarks);
+		cout << "Found " << num_faces << " Face with " << ptr_flm_model->data.options.M << " Featurepoints";
+		if (num_faces == 0)
+			return;
+		for (int i = 2; i < 2 * ptr_flm_model->data.options.M; i += 2) {
+			features_prev.push_back(cvPoint(float(ptr_landmarks[i]), float(ptr_landmarks[i + 1])));
+		}
+		// cv::Mat mask;
+		// goodFeaturesToTrack(*ptr_img_next, features_prev, 100, 0.3, 7, mask, 3, true, 0.04);
+		//features_next = features_prev;
+		*ptr_img_prev = *ptr_img_next;
+		return;
+	}
+
+	// calculate optical flow
+	try {
+		calcOpticalFlowPyrLK(*ptr_img_prev, *ptr_img_next, features_prev, features_next, status, error, cvSize(31, 31), 3);
+	} catch (cv::Exception & e) {
+		cerr << e.msg << endl;
+		throw e;
+	}
+
+	std::vector<cv::Point2f> trackedPts;
+	Scalar mask = Scalar(255);
+	for (size_t i = 0; i<status.size(); i++)
+	{
+		if (status[i])
+		{
+			trackedPts.push_back(features_next[i]);
+
+			cv::circle(mask, features_prev[i], 15, cv::Scalar(0), -1);
+			cv::line(*ptr_img_copy, features_prev[i], features_next[i], cv::Scalar(0, 250, 0));
+			cv::circle(*ptr_img_copy, features_next[i], 3, cv::Scalar(0, 250, 0), -1);
+		}
+	}
+	*ptr_img_next = *ptr_img_prev;
+	//features_prev = features_next;
+	imshow("Optical Flow", *ptr_img_copy);
 }

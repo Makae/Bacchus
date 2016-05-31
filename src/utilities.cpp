@@ -5,6 +5,8 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/objdetect.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <opencv2/xfeatures2d/nonfree.hpp>
 
 #ifdef __arm__
 #include <raspicam/raspicam_cv.h>
@@ -29,7 +31,7 @@ void Utilities::test() {
 	cout << "TEST";
 }
 
-void Utilities::detectFaceInImage(IplImage *orig, IplImage* input, CvHaarClassifierCascade* cascade, FLANDMARK_Model *model, int *bbox, double *landmarks)
+void Utilities::detectFaceInImage(IplImage* input, int& num_faces, CvHaarClassifierCascade* cascade, FLANDMARK_Model * model	, int *& bbox, double *& landmarks)
 {
 	// Smallest face size.
 	CvSize minFeatureSize = cvSize(40, 40);
@@ -45,11 +47,10 @@ void Utilities::detectFaceInImage(IplImage *orig, IplImage* input, CvHaarClassif
 
 	// Detect all the faces in the greyscale image.
 	rects = cvHaarDetectObjects(input, cascade, storage, search_scale_factor, 2, flags, minFeatureSize);
-	nFaces = rects->total;
+	num_faces = rects->total;
 
 	double t = (double)cvGetTickCount();
-	for (int iface = 0; iface < (rects ? nFaces : 0); ++iface)
-	{
+	for (int iface = 0; iface < (rects ? num_faces : 0); ++iface) {
 		CvRect *r = (CvRect*)cvGetSeqElem(rects, iface);
 
 		bbox[0] = r->x;
@@ -58,27 +59,10 @@ void Utilities::detectFaceInImage(IplImage *orig, IplImage* input, CvHaarClassif
 		bbox[3] = r->y + r->height;
 
 		flandmark_detect(input, bbox, model, landmarks);
+		break;
 
-		// display landmarks
-		cvRectangle(orig, cvPoint(bbox[0], bbox[1]), cvPoint(bbox[2], bbox[3]), CV_RGB(255, 0, 0));
-		cvRectangle(orig, cvPoint(model->bb[0], model->bb[1]), cvPoint(model->bb[2], model->bb[3]), CV_RGB(0, 0, 255));
-		cvCircle(orig, cvPoint((int)landmarks[0], (int)landmarks[1]), 3, CV_RGB(0, 0, 255), CV_FILLED);
-		for (int i = 2; i < 2 * model->data.options.M; i += 2)
-		{
-			cvCircle(orig, cvPoint(int(landmarks[i]), int(landmarks[i + 1])), 3, CV_RGB(255, 0, 0), CV_FILLED);
+	}
 
-		}
-	}
-	t = (double)cvGetTickCount() - t;
-	int ms = cvRound(t / ((double)cvGetTickFrequency() * 1000.0));
-
-	if (nFaces > 0)
-	{
-		printf("Faces detected: %d; Detection of facial landmark on all faces took %d ms\n", nFaces, ms);
-	}
-	else {
-		printf("NO Face\n");
-	}
 
 	cvReleaseMemStorage(&storage);
 }
