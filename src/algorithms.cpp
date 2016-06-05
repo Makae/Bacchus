@@ -9,7 +9,9 @@
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/optflow.hpp>
 
+#ifndef __arm__
 #include "flandmark_detector.h"
+#endif
 
 #include "../include/project/algorithms.h"
 #include "../include/project/utilities.h"
@@ -20,11 +22,16 @@ using namespace cv;
 using namespace std;
 using namespace xfeatures2d;
 
+#ifndef __arm__
 FLANDMARK_Model* ptr_flm_model;
+#endif
+
 CvHaarClassifierCascade* ptr_face_cascade;
 int* ptr_bbox = (int*)malloc(4 * sizeof(int));
 double* ptr_landmarks;
+#ifndef __arm__
 bool flandmark_initialized = false;
+#endif
 Mat* ptr_img_prev = new Mat;
 std::vector<cv::Point2f> features_prev;
 
@@ -86,7 +93,7 @@ void Algorithms::showTemplateMatching(Mat& img) {
 	Templatematcher *tm = new Templatematcher();
 	tm->run(img);
 }
-
+#ifndef __arm__
 void Algorithms::doFlandmark(Mat& img, int& num_faces, int bbox[4], double*& ptr_flandmarks ) {
 	IplImage* ptr_img_ipl = cvCloneImage(&(IplImage(img)));
 	IplImage* ptr_img_bw = cvCreateImage(cvSize(img.cols, img.rows), IPL_DEPTH_8U, 1);
@@ -110,7 +117,8 @@ void Algorithms::doFlandmark(Mat& img, int& num_faces, int bbox[4], double*& ptr
 		ptr_bbox,
 		ptr_landmarks);
 }
-
+#endif
+#ifndef __arm__
 void Algorithms::showFlandmark(Mat& img) {
 	char fps[50];
 	int bbox[4];
@@ -142,6 +150,7 @@ void Algorithms::showFlandmark(Mat& img) {
 
 	imshow("Flandmark Feature Points", cvarrToMat(ptr_img_ipl));
 }
+#endif
 
 void Algorithms::showFeatureTracker(Mat& img)  {
 	Featuretracker *ft = new Featuretracker();
@@ -164,17 +173,20 @@ void Algorithms::showLucasKanade(Mat& img) {
 	bool no_prev_img = ptr_img_prev->cols == 0;
 	TermCriteria termcrit(TermCriteria::COUNT | TermCriteria::EPS, 20, 0.03);
 	if (no_prev_img) {
-		cout << "Searching Face and points";
-		Algorithms::doFlandmark(img, num_faces, bbox, landmarks);
-		cout << "Found " << num_faces << " Face with " << ptr_flm_model->data.options.M << " Featurepoints";
-		if (num_faces == 0)
-			return;
-		for (int i = 2; i < 2 * ptr_flm_model->data.options.M; i += 2) {
-			features_prev.push_back(cvPoint(float(ptr_landmarks[i]), float(ptr_landmarks[i + 1])));
-		}
-		// cv::Mat mask;
-		// goodFeaturesToTrack(*ptr_img_next, features_prev, 100, 0.3, 7, mask, 3, true, 0.04);
-		//features_next = features_prev;
+		#ifndef __arm__
+			cout << "Searching Face and points";
+			Algorithms::doFlandmark(img, num_faces, bbox, landmarks);
+			cout << "Found " << num_faces << " Face with " << ptr_flm_model->data.options.M << " Featurepoints";
+			if (num_faces == 0)
+				return;
+			for (int i = 2; i < 2 * ptr_flm_model->data.options.M; i += 2) {
+				features_prev.push_back(cvPoint(float(ptr_landmarks[i]), float(ptr_landmarks[i + 1])));
+			}
+		#else
+			cv::Mat mask;
+			goodFeaturesToTrack(*ptr_img_next, features_prev, 100, 0.3, 7, mask, 3, true, 0.04);
+			features_next = features_prev;
+		#endif
 		*ptr_img_prev = *ptr_img_next;
 		return;
 	}

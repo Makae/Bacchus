@@ -5,8 +5,9 @@
 #include <opencv2/objdetect.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
-
+#ifndef __arm__
 #include "flandmark_detector.h"
+#endif
 
 using namespace cv;
 
@@ -20,8 +21,10 @@ class Utilities
 			return instance;
 		}
 		void test();
+		#ifndef __arm__
 		void detectFaceInImage(IplImage * input, int & num_faces, CvHaarClassifierCascade * cascade, FLANDMARK_Model * model, int *& bbox, double *& landmarks);
 		void initFlandmarkModel(char * data_file, FLANDMARK_Model*& model);
+		#endif		
 		void initFaceCascade(char * cascade_file, CvHaarClassifierCascade*& cascade);
 		Mat getImage();
 
