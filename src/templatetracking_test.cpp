@@ -63,8 +63,11 @@ void track()
 	Rect AOI = cv::Rect(
 		max<int>(0, prev_match_point.x - template_width), 
 		max<int>(0, prev_match_point.y - template_height), 
-		mytemplate.cols * 3,
-		mytemplate.rows * 3);
+		template_width * 3,
+		template_height * 3);
+	AOI.width  = min<int>(AOI.width,  img.cols - AOI.x);
+	AOI.height = min<int>(AOI.height, img.rows - AOI.y);
+	
 	Mat img_aoi = img(AOI);
 
 	Mat result = TplMatch(img_aoi, mytemplate);
@@ -80,7 +83,7 @@ void track()
 	roiImg = img(ROI);
 	roiImg.copyTo(mytemplate);
 
-	rectangle(img, aoi_match, Point(AOI.x + AOI.width, AOI.y + AOI.height), CV_RGB(0, 255, 0), 0.5);
+	rectangle(img, Point(AOI.x, AOI.y), Point(AOI.x + AOI.width, AOI.y + AOI.height), CV_RGB(0, 255, 0), 0.5);
 	rectangle(img, match, Point(match.x + ROI.width, match.y + ROI.height), CV_RGB(255, 0, 0), 0.5);
 
 	imshow("roiImg", roiImg); //waitKey(0);

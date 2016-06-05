@@ -16,6 +16,7 @@
 
 #include "../include/project/templatematcher.h"
 #include "../include/project/utilities.h"
+#include "../include/project/templatetracking_test.h"
 
 using namespace cv;
 using namespace std;
@@ -37,16 +38,8 @@ Templatematcher::Templatematcher() {
 
 Templatematcher::~Templatematcher() {}
 
-void Templatematcher::run(Mat * ptr_img) {
-	this->askSeedPoint();
-	this->focus = this->seed;
-	Mat img;
-	while (true) {
-		if (waitKey(30) >= 0) break;
-		img = Utilities::getInstance()->getImage();
-		this->roi = this->getRoi(&img, this->focus, this->roi_width);
-
-	}
+void Templatematcher::run(Mat & ptr_img) {
+		call_template_tracking();
 }
 
 array<int, 2> Templatematcher::askSeedPoint() {

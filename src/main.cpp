@@ -8,7 +8,6 @@
 #include "../include/project/mouthtracker.h"
 #include "../include/project/utilities.h"
 #include "../include/project/algorithms.h"
-#include "../include/project/templatetracking_test.h"
 
 #include "main.h"
 
@@ -24,8 +23,9 @@ const int ALGO_SIFT = 2;
 const int ALGO_SURF = 4;
 const int ALGO_TEMPLATE_MATCHING = 8;
 const int ALGO_LUCAS_KANADE = 9;
+const int ALGO_FEATURE_TRACKER = 16;
 
-int active_algo = ALGO_TEMPLATE_MATCHING;
+int active_algo = ALGO_CANNY;
 
 int hist_thresh_low = 30;
 int hist_thresh_high = 90;
@@ -41,26 +41,30 @@ int current_y = -1;
 
 bool algo_handles_img = false;
 
-void showAlgo(int active_algo, Mat* ptr_img) {
+void showAlgo(int active_algo, Mat& img) {
 	switch (active_algo) {
 	case ALGO_SURF:
-		Algorithms::showSURF(ptr_img);
+		Algorithms::showSURF(img);
 	break;
 
 	case ALGO_SIFT:
-		Algorithms::showSIFT(ptr_img);
+		Algorithms::showSIFT(img);
 	break;
 
 	case ALGO_FLANDMARK:
-		Algorithms::showFlandmark(ptr_img);
+		Algorithms::showFlandmark(img);
 	break;
 
 	case ALGO_LUCAS_KANADE:
-		Algorithms::showLucasKanade(ptr_img);
+		Algorithms::showLucasKanade(img);
 		break;
 
 	case ALGO_TEMPLATE_MATCHING:
-		Algorithms::showTemplateMatching(ptr_img);
+		Algorithms::showTemplateMatching(img);
+		break;
+
+	case ALGO_FEATURE_TRACKER:
+		Algorithms::showFeatureTracker(img);
 		break;
 
 	case ALGO_CANNY:
@@ -68,7 +72,7 @@ void showAlgo(int active_algo, Mat* ptr_img) {
 		ptr_bound_h_value = &hist_thresh_low;
 		ptr_bound_v_value = &hist_thresh_high;
 	
-		Algorithms::showCanny(ptr_img, hist_thresh_low, hist_thresh_high);
+		Algorithms::showCanny(img, hist_thresh_low, hist_thresh_high);
 	break;
 	}
 }
@@ -87,8 +91,12 @@ int handleInput() {
 		active_algo = ALGO_SURF;
 	} else if (key_code == 53) { // 5
 		active_algo = ALGO_LUCAS_KANADE;
-	} else if (key_code == 54) { // 6
+	}
+	else if (key_code == 54) { // 6
 		active_algo = ALGO_TEMPLATE_MATCHING;
+	}
+	else if (key_code == 55) { // 7
+		active_algo = ALGO_FEATURE_TRACKER;
 	}
 
 	if (key_code == 2490368) { // UP
@@ -110,15 +118,11 @@ int handleInput() {
 
 int main(int argc, char** argv)
 {
-	
-	call_template_tracking();
-	return -1;
-	/*Utilities* utilities = Utilities::getInstance();
+	Utilities* utilities = Utilities::getInstance();
 	Mat img;
-	Mat img_gray;
-	while(true) {*/
-		//img = utilities->getImage();
+	while(true) {
+		img = utilities->getImage();
 		active_algo = handleInput();
-		showAlgo(active_algo, 0);
-	//}
+		showAlgo(active_algo, img);
+	}
 }

@@ -14,6 +14,7 @@
 #include "../include/project/algorithms.h"
 #include "../include/project/utilities.h"
 #include "../include/project/templatematcher.h"
+#include "../include/project/featuretracker.h"
 
 using namespace cv;
 using namespace std;
@@ -29,11 +30,10 @@ std::vector<cv::Point2f> features_prev;
 
 
 
-void Algorithms::showCanny(Mat* ptr_img, int hist_thresh_low, int hist_thresh_high) {
-	Mat img = (*ptr_img);
+void Algorithms::showCanny(Mat& img, int hist_thresh_low, int hist_thresh_high) {
 	Mat img_gray;
 	Mat img_edges;
-	cvtColor((*ptr_img), img_gray, CV_BGR2GRAY);
+	cvtColor(img, img_gray, CV_BGR2GRAY);
 	Canny(img_gray, img_edges, hist_thresh_low, hist_thresh_high);
 
 	for (int i = 0; i < img.rows; i++) {
@@ -52,10 +52,9 @@ void Algorithms::showCanny(Mat* ptr_img, int hist_thresh_low, int hist_thresh_hi
 	imshow("Canny", img_edges);
 }
 
-void Algorithms::showSIFT(Mat* ptr_img) {
-	Mat img = (*ptr_img);
+void Algorithms::showSIFT(Mat& img) {
 	Mat img_gray;
-	cvtColor((*ptr_img), img_gray, CV_BGR2GRAY);
+	cvtColor(img, img_gray, CV_BGR2GRAY);
 	cv::Ptr<Feature2D> sift = SIFT::create(10);
 	std::vector<KeyPoint> keypoints_1, keypoints_2;
 
@@ -68,11 +67,10 @@ void Algorithms::showSIFT(Mat* ptr_img) {
 	imshow("SIFT", img_gray);
 }
 
-void Algorithms::showSURF(Mat* ptr_img) {
-	Mat img = (*ptr_img);
+void Algorithms::showSURF(Mat& img) {
 	Mat img_gray;
-	cvtColor((*ptr_img), img_gray, CV_BGR2GRAY);
-	cv::Ptr<Feature2D> sift = SURF::create(100);
+	cvtColor(img, img_gray, CV_BGR2GRAY);
+	cv::Ptr<Feature2D> sift = SURF::create(200);
 	std::vector<KeyPoint> keypoints_1, keypoints_2;
 
 	sift->detect(img_gray, keypoints_1);
@@ -84,14 +82,14 @@ void Algorithms::showSURF(Mat* ptr_img) {
 	imshow("SURF", img_gray);
 }
 
-void Algorithms::showTemplateMatching(Mat * ptr_img) {
+void Algorithms::showTemplateMatching(Mat& img) {
 	Templatematcher *tm = new Templatematcher();
-	tm->run(ptr_img);
+	tm->run(img);
 }
 
-void Algorithms::doFlandmark(Mat* ptr_img, int& num_faces, int bbox[4], double*& ptr_flandmarks ) {
-	IplImage* ptr_img_ipl = cvCloneImage(&(IplImage(*ptr_img)));
-	IplImage* ptr_img_bw = cvCreateImage(cvSize((*ptr_img).cols, (*ptr_img).rows), IPL_DEPTH_8U, 1);
+void Algorithms::doFlandmark(Mat& img, int& num_faces, int bbox[4], double*& ptr_flandmarks ) {
+	IplImage* ptr_img_ipl = cvCloneImage(&(IplImage(img)));
+	IplImage* ptr_img_bw = cvCreateImage(cvSize(img.cols, img.rows), IPL_DEPTH_8U, 1);
 	Utilities utils = (*Utilities::getInstance());
 	int* ptr_bbox = &bbox[0];
 	
@@ -113,17 +111,17 @@ void Algorithms::doFlandmark(Mat* ptr_img, int& num_faces, int bbox[4], double*&
 		ptr_landmarks);
 }
 
-void Algorithms::showFlandmark(Mat* ptr_img) {
+void Algorithms::showFlandmark(Mat& img) {
 	char fps[50];
 	int bbox[4];
 	int num_faces = 0;
 	double* landmarks = 0;
-	IplImage* ptr_img_ipl = &(IplImage)(*ptr_img);
+	IplImage* ptr_img_ipl = &(IplImage)img;
 
 	CvFont font;
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0, 0, 1, CV_AA);
 
-	Algorithms::doFlandmark(ptr_img, num_faces, bbox, landmarks);
+	Algorithms::doFlandmark(img, num_faces, bbox, landmarks);
 
 	// display landmarks
 	cvRectangle(ptr_img_ipl, cvPoint(bbox[0], bbox[1]), cvPoint(bbox[2], bbox[3]), CV_RGB(255, 0, 0));
@@ -145,7 +143,12 @@ void Algorithms::showFlandmark(Mat* ptr_img) {
 	imshow("Flandmark Feature Points", cvarrToMat(ptr_img_ipl));
 }
 
-void Algorithms::showLucasKanade(Mat* ptr_img) {
+void Algorithms::showFeatureTracker(Mat& img)  {
+	Featuretracker *ft = new Featuretracker();
+	ft->run(img);
+}
+
+void Algorithms::showLucasKanade(Mat& img) {
 	Mat* ptr_img_next = new Mat;
 	Mat* ptr_img_copy = new Mat;
 	std::vector<cv::Point2f>     features_next;
@@ -156,13 +159,13 @@ void Algorithms::showLucasKanade(Mat* ptr_img) {
 	int num_faces = 0;
 	double* landmarks = 0;
 
-	cvtColor((*ptr_img), (*ptr_img_next), CV_BGR2GRAY);
+	cvtColor(img, (*ptr_img_next), CV_BGR2GRAY);
 	*ptr_img_copy = *ptr_img_next;
 	bool no_prev_img = ptr_img_prev->cols == 0;
 	TermCriteria termcrit(TermCriteria::COUNT | TermCriteria::EPS, 20, 0.03);
 	if (no_prev_img) {
 		cout << "Searching Face and points";
-		Algorithms::doFlandmark(ptr_img, num_faces, bbox, landmarks);
+		Algorithms::doFlandmark(img, num_faces, bbox, landmarks);
 		cout << "Found " << num_faces << " Face with " << ptr_flm_model->data.options.M << " Featurepoints";
 		if (num_faces == 0)
 			return;

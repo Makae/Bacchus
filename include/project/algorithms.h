@@ -10,13 +10,14 @@ using namespace cv;
 class Algorithms
 {
 	public:
-		static void showCanny(Mat* ptr_img, int hist_thresh_low, int hist_thresh_high);
-		static void showSIFT(Mat * ptr_img);
-		static void showSURF(Mat * ptr_img);
-		static void doFlandmark(Mat * ptr_img, int & num_faces, int bbox[4], double *& ptr_flandmarks);
-		static void showFlandmark(Mat * ptr_img);
-		static void showLucasKanade(Mat * ptr_img);
-		static void showTemplateMatching(Mat * ptr_img);
+		static void showCanny(Mat& img, int hist_thresh_low, int hist_thresh_high);
+		static void showSIFT(Mat& img);
+		static void showSURF(Mat& img);
+		static void doFlandmark(Mat& img, int & num_faces, int bbox[4], double *& ptr_flandmarks);
+		static void showFlandmark(Mat& img);
+		static void showFeatureTracker(Mat& img);
+		static void showLucasKanade(Mat& img);
+		static void showTemplateMatching(Mat& img);
 	private:
 		Algorithms();
 };

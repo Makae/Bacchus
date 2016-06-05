@@ -13,7 +13,7 @@ public:
 	Templatematcher();
 	~Templatematcher();
 	
-	void run(Mat * ptr_img);
+	void run(Mat & ptr_img);
 	void setSeed(int x, int y);
 	void setFocus(int x, int y);
 
