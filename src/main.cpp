@@ -24,6 +24,7 @@ const int ALGO_SURF = 4;
 const int ALGO_TEMPLATE_MATCHING = 8;
 const int ALGO_LUCAS_KANADE = 9;
 const int ALGO_FEATURE_TRACKER = 16;
+const int ALGO_SNAKE = 32;
 
 int active_algo = ALGO_CANNY;
 
