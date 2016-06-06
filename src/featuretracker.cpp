@@ -62,8 +62,10 @@ void Featuretracker::run(Mat & img) {
 	
 		try {
 			Mat tmp;
-			cv::bitwise_and(this->img_previous, this->img_current, tmp);
-			imshow("difference", tmp);
+			#ifndef __arm__			
+				cv::bitwise_and(this->img_previous, this->img_current, tmp);
+				imshow("difference", tmp);
+			#endif
 			//cout << "#prev: " << &(*this->img_previous) << "\n";
 			//cout << "#current: " << &(*this->img_current) << "\n";
 			calcOpticalFlowPyrLK(

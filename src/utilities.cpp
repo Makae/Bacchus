@@ -10,8 +10,12 @@
 
 #ifdef __arm__
 #include <raspicam/raspicam_cv.h>
+#include <unistd.h>
 #endif
+
+#ifndef __arm__
 #include "flandmark_detector.h"
+#endif
 
 #include "../include/project/utilities.h"
 
@@ -21,7 +25,7 @@ using namespace std;
 Utilities* Utilities::instance = 0;
 VideoCapture* std_cap = 0;
 #ifdef __arm__
-raspicam::RaspiCam* raspi_cap = 0;
+raspicam::RaspiCam_Cv* raspi_cap = 0;
 #endif
 
 
@@ -31,6 +35,7 @@ void Utilities::test() {
 	cout << "TEST";
 }
 
+#ifndef __arm__
 void Utilities::detectFaceInImage(IplImage* input, int& num_faces, CvHaarClassifierCascade* cascade, FLANDMARK_Model * model	, int *& bbox, double *& landmarks)
 {
 	// Smallest face size.
@@ -66,7 +71,9 @@ void Utilities::detectFaceInImage(IplImage* input, int& num_faces, CvHaarClassif
 
 	cvReleaseMemStorage(&storage);
 }
+#endif
 
+#ifndef __arm__
 void Utilities::initFlandmarkModel(char* data_file, FLANDMARK_Model*& model) {
 	// ------------- begin flandmark load model
 	int t = (double)cvGetTickCount();
@@ -81,6 +88,7 @@ void Utilities::initFlandmarkModel(char* data_file, FLANDMARK_Model*& model) {
 	printf("Structure model loaded in %d ms.\n", ms);
 	// ------------- end flandmark load model
 }
+#endif
 
 void Utilities::initFaceCascade(char* cascade_file, CvHaarClassifierCascade*& cascade) {
 	cascade = (CvHaarClassifierCascade*) cvLoad(cascade_file, 0, 0, 0);
@@ -101,11 +109,13 @@ Mat getImageStd() {
 Mat getImageRaspberry() {
 	Mat img;
 	if (raspi_cap == 0) {
-		raspi_cap = new Camera; //Cmaera object
+		raspi_cap = new raspicam::RaspiCam_Cv; //Cmaera object
 								   //Open camera 
+		raspi_cap->set(CV_CAP_PROP_FRAME_WIDTH,640);
+		raspi_cap->set(CV_CAP_PROP_FRAME_HEIGHT,480);
 		cout << "Opening Camera..." << endl;
-		if (!Camera.open()) { 
-			cerr << "Error opening camera" << endl; return -1; 
+		if (!raspi_cap->open()) { 
+			cerr << "Error opening camera" << endl; 
 		}
 		//wait a while until camera stabilizes
 		cout << "Sleeping for 3 secs" << endl;
@@ -113,9 +123,9 @@ Mat getImageRaspberry() {
 		//capture
 	}
 
-	Camera.grab();
+	raspi_cap->grab();
 	//extract the image in rgb format
-	Camera.retrieve(img);
+	raspi_cap->retrieve(img);
 	return img;
 }
 #endif
@@ -123,7 +133,7 @@ Mat getImageRaspberry() {
 Mat Utilities::getImage() {
 	Mat img;
 #ifdef __arm__
-	img = getRaspberry();
+	img = getImageRaspberry();
 #else
 	img = getImageStd();
 #endif
