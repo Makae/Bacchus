@@ -25,8 +25,9 @@ const int ALGO_TEMPLATE_MATCHING = 8;
 const int ALGO_LUCAS_KANADE = 9;
 const int ALGO_FEATURE_TRACKER = 16;
 const int ALGO_SNAKE = 32;
+const int ALGO_VIOLAJONES = 64;
 
-int active_algo = ALGO_NONE;
+int active_algo = ALGO_VIOLAJONES;
 
 int hist_thresh_low = 30;
 int hist_thresh_high = 90;
@@ -44,6 +45,14 @@ bool algo_handles_img = false;
 
 void showAlgo(int active_algo, Mat& img) {
 	switch (active_algo) {
+	case ALGO_VIOLAJONES:
+		Algorithms::showViolaJones(img);
+	break;
+
+	case ALGO_SNAKE:		
+		Algorithms::showSnake(img);
+	break;
+
 	case ALGO_NONE:
 		imshow("No Algorithm", img);	
 	break;
@@ -103,6 +112,9 @@ int handleInput() {
 	}
 	else if (key_code == 55 || key_code == 1048630) { // 7
 		active_algo = ALGO_FEATURE_TRACKER;
+	}
+	else if (key_code == 56 || key_code == 1048631) { // 8
+		active_algo = ALGO_VIOLAJONES;
 	}
 
 	if (key_code == 2490368) { // UP

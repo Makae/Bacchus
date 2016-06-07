@@ -11,6 +11,8 @@ class Algorithms
 {
 	public:
 		static void showCanny(Mat& img, int hist_thresh_low, int hist_thresh_high);
+		static void showViolaJones(Mat & img);
+		static void showSnake(Mat & img);
 		static void showSIFT(Mat& img);
 		static void showSURF(Mat& img);
 		static void doFlandmark(Mat& img, int & num_faces, int bbox[4], double *& ptr_flandmarks);

@@ -10,7 +10,9 @@
 #include <opencv2/optflow.hpp>
 
 #ifndef __arm__
+extern "C" {
 #include "flandmark_detector.h"
+}
 #endif
 
 #include "../include/project/algorithms.h"
@@ -41,7 +43,8 @@ void Algorithms::showCanny(Mat& img, int hist_thresh_low, int hist_thresh_high) 
 	Mat img_gray;
 	Mat img_edges;
 	cvtColor(img, img_gray, CV_BGR2GRAY);
-	Canny(img_gray, img_edges, hist_thresh_low, hist_thresh_high);
+	Canny(img_gray, img_edges, 
+		  hist_thresh_low, hist_thresh_high);
 
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
@@ -57,6 +60,63 @@ void Algorithms::showCanny(Mat& img, int hist_thresh_low, int hist_thresh_high) 
 	//Show the results
 	imshow("Original", img);
 	imshow("Canny", img_edges);
+}
+
+	void Algorithms::showViolaJones(Mat& img) {
+		Utilities utils = (*Utilities::getInstance());
+
+		CascadeClassifier face_cascade;
+		face_cascade.load("C:\\Libraries\\flandmark\\data\\haarcascade_frontalface_alt.xml");
+		std::vector<Rect> faces;
+		Mat frame_gray;
+
+		cvtColor(img, frame_gray, CV_BGR2GRAY);
+		equalizeHist(frame_gray, frame_gray);
+
+		//-- Detect faces
+		face_cascade.detectMultiScale(frame_gray, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+
+		for (size_t i = 0; i < faces.size(); i++)
+		{
+			Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
+			ellipse(img, center, Size(faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar(255, 0, 255), 4, 8, 0);
+
+			Mat faceROI = frame_gray(faces[i]);
+			std::vector<Rect> eyes;
+
+			//-- In each face, detect eyes
+			//eyes_cascade.detectMultiScale(faceROI, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+
+			//for (size_t j = 0; j < eyes.size(); j++)
+			//{
+			//	Point center(faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5);
+			//	int radius = cvRound((eyes[j].width + eyes[j].height)*0.25);
+			//	circle(frame, center, radius, Scalar(255, 0, 0), 4, 8, 0);
+			//}
+		}
+		imshow("Haar Cascades", img);
+	}
+	void Algorithms::showSnake(Mat& img) {
+	return;
+	////load file from disk and apply threshold
+	//cvThreshold(&img, &img, 170, 255, CV_THRESH_BINARY);
+	//imshow("Snake Threshold", img);
+	//return;
+	//float alpha = 0.1; // Weight of continuity energy
+	//float beta = 0.5; // Weight of curvature energy
+	//float gamma = 0.4; // Weight of image energy
+
+	//CvSize size; // Size of neighborhood of every point used to search the minimumm have to be odd
+	//size.width = 5;
+	//size.height = 5;
+
+	//CvTermCriteria criteria;
+	//criteria.type = CV_TERMCRIT_ITER;  // terminate processing after X iteration
+	//criteria.max_iter = 10000;
+	//criteria.epsilon = 0.1;
+
+	//// snake is an array of cpt=40 points, read from a file, set by hand
+	//(img, snake, cpt, &alpha, &beta, &gamma, CV_VALUE, size, criteria, 0);
 }
 
 void Algorithms::showSIFT(Mat& img) {

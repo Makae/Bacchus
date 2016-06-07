@@ -6,7 +6,9 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #ifndef __arm__
+extern "C" {
 #include "flandmark_detector.h"
+}
 #endif
 
 using namespace cv;
